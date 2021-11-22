@@ -74,19 +74,23 @@ for fileName in os.listdir(dataPath):
             # DATE, TIME, TIMEZONE, DURATION, DISTANCE, AVG SPEED, MAX SPEED, CALORIES, AVG HR, MAX HR, ELE GAIN, ELE LOSS, MIN ELE, MAX ELE
             #AVGCADENCE, MAXCADENCE, STEPS,            
 
-            if key == 'distance':
-                #data = {'distance':str(file_dict[key])}
+            if key == 'distance':                
                 distance = str(file_dict[key])
+
+
             elif key == 'startTime':
-                startTime = file_dict[key]['time']
-                startTime = startTime.replace('Z','').replace('T',' ')
-                startDateTime = pd.to_datetime(startTime)
-                print(startDateTime.day)
 
-                outStartDate = dt.datetime(startDateTime.year,startDateTime.month,startDateTime.day,startDateTime.hour,startDateTime.minute,startDateTime.second)
-                outStartTime = startDateTime.time
+                startTime = file_dict[key]['time']                
+                startTime = startTime.replace('Z','').replace('T',' ') ##format the value for constructing date time from pandas...
+                startDateTimeObj = pd.to_datetime(startTime) ##cast to datetime using Pandas              
+                
+               
+                outStartDate = startDateTimeObj.strftime("%Y-%m-%d")
+                outStartTime = startDateTimeObj.time()
+                
 
-                print(outStartDate.strftime("%Y-%m-%d %H:%M"))
+                print(outStartDate)
+                print(outStartTime)
 
               
 
