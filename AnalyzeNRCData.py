@@ -2,12 +2,14 @@ import dropbox
 import os
 from zipfile import ZipFile
 import json
+import datetime as dt
+import pandas as pd
 
 from dropbox.dropbox_client import Dropbox
 
 appkey = '3d3lqdzah65hct6'
 appsecret = 'eybf9o1k5avf1v1'
-token = ''
+token = 'RK3ZY-z72xkAAAAAAAAAAYRSIGuoMEAJ8EQeMd1WeG4W3jmjZcckN3a_Y5tBMnyX'
 #### YOU MUST CREATE AN APP ON DROPBOX THAT IS FULL SCOPED!!!!!!!
 
 
@@ -57,24 +59,43 @@ def downloadData(dbx: Dropbox):
 
 
 for fileName in os.listdir(dataPath):
+    ### limit to metadata files, their detail is suffice
     if fileName.endswith('metadata.json'):
         print("Reading... ",fileName)
         
+        ## read the entire json string of the file into a dictionary
         with open(scriptPath + '/' + dataPath + fileName,'r') as string:
             file_dict=json.load(string)
         string.close()
 
-        run_item = {}
+        
 
-        for key in file_dict:
-            #print("key:" + key + ",  value: " + str(file_dict[key]))
-            
+        for key in file_dict:          
+            # DATE, TIME, TIMEZONE, DURATION, DISTANCE, AVG SPEED, MAX SPEED, CALORIES, AVG HR, MAX HR, ELE GAIN, ELE LOSS, MIN ELE, MAX ELE
+            #AVGCADENCE, MAXCADENCE, STEPS,            
 
             if key == 'distance':
-                print("distance found") 
-                
-                data = {'id':1,'distance':str(file_dict[key])} 
-                
+                #data = {'distance':str(file_dict[key])}
+                distance = str(file_dict[key])
+            elif key == 'startTime':
+                startTime = file_dict[key]['time']
+                startTime = startTime.replace('Z','').replace('T',' ')
+                startDateTime = pd.to_datetime(startTime)
+                print(startDateTime.day)
+
+                outStartDate = dt.datetime(startDateTime.year,startDateTime.month,startDateTime.day,startDateTime.hour,startDateTime.minute,startDateTime.second)
+                outStartTime = startDateTime.time
+
+                print(outStartDate.strftime("%Y-%m-%d %H:%M"))
+
+              
+
+                       
+
+
+                #### CONSTRUCT THE DICT BEFORE ADDING TO RUNS DICT
+                data = {}
+                ##ADD THE DICT TO THE RUNS DICT
                 runs[fileName]=data
 
 
