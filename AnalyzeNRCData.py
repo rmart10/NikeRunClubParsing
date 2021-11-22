@@ -50,12 +50,30 @@ def downloadData(dbx: Dropbox):
             zipObj.extractall(dataPath)
 
 
+def clearVars():
+    distance = ""
+    outStartDate = ""
+    outStartTime = ""
+    miles = ""
+
+def convertKMToMiles(inKM):
+    miles=  inKM * .62137119
+    return miles
+
+
+
 # ##CONSTRUCT AND INIT YOUR DROPBOX OBJECT
 #dbx = dropbox.Dropbox(token)
 
 ##download/refresh local directory with Nike Run Club data from Dropbox
 #downloadData(dbx)
 
+
+##this needs to be a dict or something.
+distance = ""
+outStartDate = ""
+outStartTime = ""
+miles = ""
 
 
 for fileName in os.listdir(dataPath):
@@ -72,40 +90,33 @@ for fileName in os.listdir(dataPath):
 
         for key in file_dict:          
             # DATE, TIME, TIMEZONE, DURATION, DISTANCE, AVG SPEED, MAX SPEED, CALORIES, AVG HR, MAX HR, ELE GAIN, ELE LOSS, MIN ELE, MAX ELE
-            #AVGCADENCE, MAXCADENCE, STEPS,            
+            #AVGCADENCE, MAXCADENCE, STEPS,  
+            
+           
 
             if key == 'distance':                
                 distance = str(file_dict[key])
+                distance = float(distance) / 1000
+                miles = convertKMToMiles(distance)
+
 
 
             elif key == 'startTime':
-
                 startTime = file_dict[key]['time']                
                 startTime = startTime.replace('Z','').replace('T',' ') ##format the value for constructing date time from pandas...
-                startDateTimeObj = pd.to_datetime(startTime) ##cast to datetime using Pandas              
-                
-               
+                startDateTimeObj = pd.to_datetime(startTime) ##cast to datetime using Pandas               
                 outStartDate = startDateTimeObj.strftime("%Y-%m-%d")
-                outStartTime = startDateTimeObj.time()
-                
-
-                print(outStartDate)
-                print(outStartTime)
-
-              
-
-                       
+                outStartTime = startDateTimeObj.time()                       
 
 
-                #### CONSTRUCT THE DICT BEFORE ADDING TO RUNS DICT
-                data = {}
-                ##ADD THE DICT TO THE RUNS DICT
-                runs[fileName]=data
-
-
-        
-        
-        
+            #### CONSTRUCT THE DICT BEFORE ADDING TO RUNS DICT
+            data = {'date':outStartDate,'time':outStartTime,'distance (km)':distance,'distance (miles)':miles}
+            
+            ##ADD THE DICT TO THE RUNS DICT
+            runs[fileName]=data
+            
+            ##CLEAR THE VARIABLES
+            clearVars()  
 
 
 
