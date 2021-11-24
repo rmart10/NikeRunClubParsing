@@ -9,7 +9,7 @@ from dropbox.dropbox_client import Dropbox
 
 appkey = '3d3lqdzah65hct6'
 appsecret = 'eybf9o1k5avf1v1'
-token = '{}'
+token = '{}}'
 #### YOU MUST CREATE AN APP ON DROPBOX THAT IS FULL SCOPED!!!!!!!
 
 
@@ -56,10 +56,17 @@ def clearVars():
     outStartTime = ""
     distance_Miles = ""
     timeZone = ""
+    duration_Seconds = ""
+    avgSpeed_MetersSec = ""
+    avgSpeed_MPH = ""
 
 def convertKMToMiles(inKM):
     miles=  inKM * .62137119
     return miles
+
+def convertMetersSecondToMPH(inMS):
+    mph = inMS * 2.23693629
+    return mph
 
 
 
@@ -76,6 +83,9 @@ outStartDate = ""
 outStartTime = ""
 distance_KM = ""
 timeZone = ""
+duration_Seconds = ""
+avgSpeed_MetersSec = ""
+avgSpeed_MPH = ""
 
 
 for fileName in os.listdir(dataPath):
@@ -114,9 +124,19 @@ for fileName in os.listdir(dataPath):
                 except:
                     timeZone = 'unknown'
 
+            elif key == 'duration':
+                duration_Seconds = file_dict[key]
+
+            elif key == 'avgSpeed':
+                avgSpeed_MetersSec = file_dict[key]
+                avgSpeed_MPH = convertMetersSecondToMPH(avgSpeed_MetersSec)
+
+
 
             #### CONSTRUCT THE DICT BEFORE ADDING TO RUNS DICT
-            data = {'date':outStartDate,'time':outStartTime, 'timeZone': timeZone,'distance (km)':distance_KM,'distance (miles)':distance_Miles}
+            data = {'date':outStartDate,'time':outStartTime, 'timeZone': timeZone, 'duration(sec)':duration_Seconds,
+            'distance (km)':distance_KM,'distance (miles)':distance_Miles,'avg speed (meters/second)':avgSpeed_MetersSec,
+            'avg speed (MPH)':avgSpeed_MPH}
             
             ##ADD THE DICT TO THE RUNS DICT
             runs[fileName]=data            
