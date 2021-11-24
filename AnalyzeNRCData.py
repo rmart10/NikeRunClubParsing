@@ -9,7 +9,7 @@ from dropbox.dropbox_client import Dropbox
 
 appkey = '3d3lqdzah65hct6'
 appsecret = 'eybf9o1k5avf1v1'
-token = '{}}'
+token = '{}'
 #### YOU MUST CREATE AN APP ON DROPBOX THAT IS FULL SCOPED!!!!!!!
 
 
@@ -50,16 +50,6 @@ def downloadData(dbx: Dropbox):
             zipObj.extractall(dataPath)
 
 
-def clearVars():
-    distance_KM = ""
-    outStartDate = ""
-    outStartTime = ""
-    distance_Miles = ""
-    timeZone = ""
-    duration_Seconds = ""
-    avgSpeed_MetersSec = ""
-    avgSpeed_MPH = ""
-
 def convertKMToMiles(inKM):
     miles=  inKM * .62137119
     return miles
@@ -67,6 +57,18 @@ def convertKMToMiles(inKM):
 def convertMetersSecondToMPH(inMS):
     mph = inMS * 2.23693629
     return mph
+
+def calculateRunType(inRunDict:dict):
+
+    '''Searches the dictionary passed in for the boundingBox value and returns 'Outdoors/Mobile' if the run is 
+    found to be an outdoors run, else 'Stationary' is returned.   
+    '''
+    try:
+        inRunDict.get('boundingBox')[0]
+        return 'Outdoors/Mobile'
+    except:
+        return 'Stationary'
+
 
 
 
@@ -78,6 +80,7 @@ def convertMetersSecondToMPH(inMS):
 
 
 ##this needs to be a dict or something.
+runType = ""
 distance_Miles = ""
 outStartDate = ""
 outStartTime = ""
@@ -86,6 +89,20 @@ timeZone = ""
 duration_Seconds = ""
 avgSpeed_MetersSec = ""
 avgSpeed_MPH = ""
+maxSpeed_MetersSec = ""
+maxSpeed_MPH = ""
+calories = ""
+avgHR = ""
+maxHR = ""
+elevationGain = ""
+elevationLoss = ""
+minElevation = ""
+maxElevation = ""
+avgCadence = ""
+maxCadence = ""
+steps = ""
+
+
 
 
 for fileName in os.listdir(dataPath):
@@ -100,11 +117,17 @@ for fileName in os.listdir(dataPath):
 
         
 
+        runType = calculateRunType(file_dict)
+
         for key in file_dict:          
             # DATE, TIME, TIMEZONE, DURATION, DISTANCE, AVG SPEED, MAX SPEED, CALORIES, AVG HR, MAX HR, ELE GAIN, ELE LOSS, MIN ELE, MAX ELE
-            #AVGCADENCE, MAXCADENCE, STEPS,             
+            #AVGCADENCE, MAXCADENCE, STEPS,
+            #                    
            
 
+            
+
+            
             if key == 'distance':                
                 distance_KM = str(file_dict[key])
                 distance_KM = float(distance_KM) / 1000
@@ -131,22 +154,64 @@ for fileName in os.listdir(dataPath):
                 avgSpeed_MetersSec = file_dict[key]
                 avgSpeed_MPH = convertMetersSecondToMPH(avgSpeed_MetersSec)
 
+            elif key == 'maxSpeed':
+                maxSpeed_MetersSec = file_dict[key]
+                maxSpeed_MPH = convertMetersSecondToMPH(maxSpeed_MetersSec)
 
+            elif key == 'calories':
+                calories = file_dict[key]                
+
+            elif key == 'avgHeartrate':
+                avgHR = file_dict[key]            
+
+            elif key == 'maxHeartrate':
+                maxHR = file_dict[key]                
+
+            elif key == 'elevationGain':
+                elevationGain = file_dict[key]                
+
+            elif key == 'elevationLoss':
+                elevationLoss = file_dict[key]            
+
+            elif key == 'minElevation':
+                minElevation = file_dict[key]
+            
+            elif key == 'maxElevation':
+                maxElevation = file_dict[key]
+            
+            elif key == 'avgCadence':
+                avgCadence = file_dict[key]
+
+            elif key == 'maxCadence':
+                maxCadence = file_dict[key]
+
+            elif key == 'steps':
+                steps = file_dict[key]
+                  
+
+            
 
             #### CONSTRUCT THE DICT BEFORE ADDING TO RUNS DICT
-            data = {'date':outStartDate,'time':outStartTime, 'timeZone': timeZone, 'duration(sec)':duration_Seconds,
+            data = {'file name':fileName,'run type':runType,'date':outStartDate,'time':outStartTime, 'timeZone': timeZone, 'duration(sec)':duration_Seconds,
             'distance (km)':distance_KM,'distance (miles)':distance_Miles,'avg speed (meters/second)':avgSpeed_MetersSec,
-            'avg speed (MPH)':avgSpeed_MPH}
+            'avg speed (MPH)':avgSpeed_MPH,'max speed (meters/second)':maxSpeed_MetersSec,'max speed (MPH)':maxSpeed_MPH,
+            'calories':calories,'avg HR':avgHR,'max HR':maxHR,'elevation gain':elevationGain,'elevation loss':elevationLoss,
+            'min elevation':minElevation,'max elevation':maxElevation,'avg cadence':avgCadence,'max cadence':maxCadence,'steps':steps}
             
             ##ADD THE DICT TO THE RUNS DICT
             runs[fileName]=data            
             
-            ##CLEAR THE VARIABLES
-            clearVars()  
+            
        
 
-for item in runs.items():
-    print(item)
+# for item in runs.items():
+#     print(item)
+
+runsDF = pd.DataFrame.from_dict(runs)
+print(runsDF.head)
+runsDF_Melted = runsDF.unstack().reset_index(name='file name')
+runsDF_Melted.to_csv('melted.csv') ### now its really tall!
+
 
 
 
