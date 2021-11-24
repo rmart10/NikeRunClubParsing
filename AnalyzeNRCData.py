@@ -51,10 +51,11 @@ def downloadData(dbx: Dropbox):
 
 
 def clearVars():
-    distance = ""
+    distance_KM = ""
     outStartDate = ""
     outStartTime = ""
-    miles = ""
+    distance_Miles = ""
+    timeZone = ""
 
 def convertKMToMiles(inKM):
     miles=  inKM * .62137119
@@ -70,10 +71,11 @@ def convertKMToMiles(inKM):
 
 
 ##this needs to be a dict or something.
-distance = ""
+distance_Miles = ""
 outStartDate = ""
 outStartTime = ""
-miles = ""
+distance_KM = ""
+timeZone = ""
 
 
 for fileName in os.listdir(dataPath):
@@ -90,42 +92,38 @@ for fileName in os.listdir(dataPath):
 
         for key in file_dict:          
             # DATE, TIME, TIMEZONE, DURATION, DISTANCE, AVG SPEED, MAX SPEED, CALORIES, AVG HR, MAX HR, ELE GAIN, ELE LOSS, MIN ELE, MAX ELE
-            #AVGCADENCE, MAXCADENCE, STEPS,  
-            
+            #AVGCADENCE, MAXCADENCE, STEPS,             
            
 
             if key == 'distance':                
-                distance = str(file_dict[key])
-                distance = float(distance) / 1000
-                miles = convertKMToMiles(distance)
-
-
+                distance_KM = str(file_dict[key])
+                distance_KM = float(distance_KM) / 1000
+                distance_Miles = convertKMToMiles(distance_KM)
 
             elif key == 'startTime':
                 startTime = file_dict[key]['time']                
                 startTime = startTime.replace('Z','').replace('T',' ') ##format the value for constructing date time from pandas...
+                
                 startDateTimeObj = pd.to_datetime(startTime) ##cast to datetime using Pandas               
                 outStartDate = startDateTimeObj.strftime("%Y-%m-%d")
-                outStartTime = startDateTimeObj.time()                       
+                outStartTime = startDateTimeObj.time()  
+
+                ##try to get timezone
+                try:
+                    timeZone = file_dict[key]['timeZone']   
+                except:
+                    timeZone = 'unknown'
 
 
             #### CONSTRUCT THE DICT BEFORE ADDING TO RUNS DICT
-            data = {'date':outStartDate,'time':outStartTime,'distance (km)':distance,'distance (miles)':miles}
+            data = {'date':outStartDate,'time':outStartTime, 'timeZone': timeZone,'distance (km)':distance_KM,'distance (miles)':distance_Miles}
             
             ##ADD THE DICT TO THE RUNS DICT
-            runs[fileName]=data
+            runs[fileName]=data            
             
             ##CLEAR THE VARIABLES
             clearVars()  
-
-
-
-
-
-
-
-        # with ZipFile(scriptPath + '/' + dataPath + fileName,'r') as zipObj:
-        #     zipObj.extractall()
+       
 
 for item in runs.items():
     print(item)
