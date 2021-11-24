@@ -9,7 +9,7 @@ from dropbox.dropbox_client import Dropbox
 
 appkey = '3d3lqdzah65hct6'
 appsecret = 'eybf9o1k5avf1v1'
-token = 'RK3ZY-z72xkAAAAAAAAAAYRSIGuoMEAJ8EQeMd1WeG4W3jmjZcckN3a_Y5tBMnyX'
+token = '{}'
 #### YOU MUST CREATE AN APP ON DROPBOX THAT IS FULL SCOPED!!!!!!!
 
 
