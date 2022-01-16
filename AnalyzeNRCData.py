@@ -11,20 +11,13 @@ import seaborn as sns
 ## dropbox library
 from dropbox.dropbox_client import Dropbox
 
-from googledriveclient import GoogleDriveClient
 
 
-###GOOGLE SHEETS ID, friendly name and description OF THE SHEET YOU ARE REPLACING.
-spreadsheetId = '15KWFLCR2HglBihbCWJ-Lm_FswD3Pvk7sTKtdKNgMeq0' 
-googleDriFileFriendlyName = 'Nike Run Club Data Extract'
-googleDriveFileDescription = 'A Pandas derived collection of Richs run data'
-parentFolderId = "1-rRiTjAWVfsty7vhLCud9OrMg0sXW9Xp" ## only used when creating a new file, can be passed into constructor and is ignored in GoogleDriveClient class
- 
 
 ###DROPBOX CREDENTIALS
-appkey = ##
-appsecret = ##
-token = ##
+appkey = '{}'
+appsecret = '{}'
+token = '{}'
 #### YOU MUST CREATE AN APP ON DROPBOX THAT IS FULL SCOPED!!!!!!!
 
 
@@ -68,53 +61,17 @@ columns = [
 'maxCadence',
 'steps',
 'startLatitude',
-'startLongitude',
-'avgTemp'
+'startLongitude'
 ]
 
 
 ## blank df which will hold runs.
 dfRuns = pd.DataFrame(columns=columns)
 
-cols = ['STATION', 'NAME', 'DATE', 'AWND', 'PGTM', 'TAVG', 'TMAX', 'TMIN',
-       'TOBS', 'WDF2', 'WDF5', 'WSF2', 'WSF5']
-dfWeather = pd.DataFrame(columns=cols)
 
 
 ## bool that will control whether or not we make a call to dropbox to fetch all NRC files
 refreshData = False
-
-## bool that will control whether we refresh the data on Google Drive
-refreshGoogleDriveData = False
-
-
-def loadWeatherDataFrame():
-    '''Function reads csv weather_raw in same app directory and populates already established dfWeather DataFrame.
-    Accepts/Requires 0 parameters:''' 
-
-    ##read csv
-    dfWeatherRaw = pd.read_csv('weather_raw.csv')   
-
-    ##new df after dropping rows with no avg temp
-    dfWeatherClean = dfWeatherRaw.dropna(subset=['TAVG'])
-
-    ##cast date column to date
-    dfWeatherClean['DATE'] = pd.to_datetime(dfWeatherClean['DATE'])
-
-    for index, row in dfWeatherClean.iterrows():
-        dfWeather.loc[index] = pd.Series(row)     
-
-
-def lookupAvgWeatherByDate(df: pd.DataFrame, datein: dt.datetime):  
-    '''Function will lookup the avg temp value in data frame passed in and return the value.
-    Accepts/Requires 2 parameters: df = dfWeather data frame, datein: YYYY-MM-DD datetime object'''      
-
-    ## look up a value in the df using .query
-    dfresult = df.query("DATE =='" + str(datein)+"'")    
-
-    ##RETURN A VALUE FROM RESULT    
-    return str(dfresult['TAVG'].values)
-
 
 
 def downloadData(dbx: Dropbox):
@@ -158,7 +115,6 @@ def convertMetersSecondToMPH(inMS):
     return mph
 
 def calculateRunType(inRunDict:dict):
-
     '''Searches the dictionary passed in for the boundingBox value and returns 'Outdoors/Mobile' if the run is 
     found to be an outdoors run, else 'Stationary' is returned.   
     '''
@@ -169,11 +125,6 @@ def calculateRunType(inRunDict:dict):
         return 'Stationary'
 
 
-
-
-
-################################ LOAD/CLEAN WEATHER DATA FRAME
-loadWeatherDataFrame()
 
 if refreshData == True:
     ##CONSTRUCT AND INIT YOUR DROPBOX OBJECT
@@ -187,7 +138,7 @@ else:
 ##init vars used for appending to df 
 runType,distance_Miles,outStartDate,outStartTime,distance_KM,timeZone,duration_Seconds,avgSpeed_MetersSec, \
 avgSpeed_MPH,maxSpeed_MetersSec,maxSpeed_MPH,calories,avgHR,maxHR,elevationGain,elevationLoss,minElevation, \
-maxElevation,avgCadence,maxCadence,steps,startLatitude,startLongitude,avgTemp = "","","","","","","","","","","","","","","","","","","","","","","",""
+maxElevation,avgCadence,maxCadence,steps,startLatitude,startLongitude = "","","","","","","","","","","","","","","","","","","","","","",""
 
 
 print("###### Beginning processing of downloaded, extracted files...")
@@ -226,11 +177,7 @@ for fileName in os.listdir(dataPath):
                 
                 startDateTimeObj = pd.to_datetime(startTime) ##cast to datetime using Pandas               
                 outStartDate = startDateTimeObj.strftime("%Y-%m-%d")                          
-                outStartTime = startDateTimeObj.time()  
-
-                ##set temp
-                avgTemp = lookupAvgWeatherByDate(dfWeather,outStartDate)
-                avgTemp = avgTemp.replace('[','').replace(']','').replace('.','')      
+                outStartTime = startDateTimeObj.time()                      
 
                 ##try to get timezone
                 try:
@@ -282,15 +229,14 @@ for fileName in os.listdir(dataPath):
             elif key == 'displayPath':
                 ##run type should be Outdoors/Mobile
                 startLatitude = file_dict[key][0]['lat']
-                startLongitude = file_dict[key][0]['lon']
-            
+                startLongitude = file_dict[key][0]['lon']           
 
           
             
         row = pd.Series([runType,distance_Miles,outStartDate,outStartTime,distance_KM,timeZone,
         duration_Seconds,avgSpeed_MetersSec,avgSpeed_MPH,maxSpeed_MetersSec,maxSpeed_MPH
-        ,calories,avgHR,maxHR,elevationGain,elevationLoss,minElevation,maxElevation,
-        avgCadence,maxCadence,steps,startLatitude,startLongitude,avgTemp],index=dfRuns.columns)
+        ,calories,float(avgHR),maxHR,elevationGain,elevationLoss,minElevation,maxElevation,
+        avgCadence,maxCadence,steps,startLatitude,startLongitude],index=dfRuns.columns)
         
         
         #append row to dataframe at counters index
@@ -308,13 +254,8 @@ dfRuns.to_csv(outputFileName,header=True)
 
 
 
-if refreshGoogleDriveData == True:
-    ##upload and overwrite file on google drive
-    gDriveClient=GoogleDriveClient(outputFileName,'Nike Run Club Data Extract','A Pandas derived collection of Richs run data','',spreadsheetId)
-    result = gDriveClient.replaceFileFile()
 
-
-############### PLOT OUT SOME HIGH LEVEL AGGREGATES
+############### PLOT OUT SOME HIGH LEVEL AGGREGATES using MATPLOTLIB
 
 print("##### Total Runs by Run Type:")
 dfRunTypes = dfRuns.groupby('runType').size()
@@ -327,18 +268,42 @@ plt.title('Total Runs by Run Type')
 plt.grid(axis='y') ## show gridlines on x axis only
 plt.show()
 
+print("##### Average Pace by Run Type:")
+dfRunAvgPace = dfRuns.groupby('runType')['avgSpeed_MPH'].mean()
+print(dfRunAvgPace)
+dfRunAvgPace.plot(x="runType",y="mean",kind="bar")
+plt.xlabel('Run Types')
+plt.xticks(rotation=0) ##rotate x axis labels, they were at 90
+plt.ylabel('Avg Pace')
+plt.title('Average Pace by Run Type')
+plt.grid(axis='y') ## show gridlines on x axis only
+plt.show()
+
+print("##### Average HR by Run Type:")
+
+dfRunAvgHR = dfRuns.groupby('runType')['avgHR'].mean()
+print(dfRunAvgHR)
+dfRunAvgHR.plot(x="runType",y="mean",kind="bar")
+plt.xlabel('Run Types')
+plt.xticks(rotation=0) ##rotate x axis labels, they were at 90
+plt.ylabel('Avg HR')
+plt.title('Average HR by Run Type')
+plt.grid(axis='y') ## show gridlines on x axis only
+plt.show()
 
 
 
-# dfCleanAvgHRDistance = dfRuns.dropna(subset=['distance_Miles','avgHR']) ##remove rows from the dfRuns DF that have nulls in either of these columns.
-# dfCleanAvgHRDistance = dfCleanAvgHRDistance.query("distance_Miles >= 1").query("avgHR > 0") ## remove rows where less than 1 mile was run, no HR was captured
 
-# dfCleanAvgHRDistance['distance_Miles'] = dfCleanAvgHRDistance['distance_Miles'].astype(float)
 
-# dfCleanAvgHRDistance['avgHR'] = dfCleanAvgHRDistance['avgHR'].astype(float)
-# sns.regplot(x="avgHR",y="distance_Miles",data=dfCleanAvgHRDistance)
-# plt.title("Linear Regression Model Fit: Average HR and Distance Run")
-# plt.show()
+## SEABORN PLOTS
+
+dfCleanAvgHRDistance = dfRuns.dropna(subset=['distance_Miles','avgHR']) ##remove rows from the dfRuns DF that have nulls in either of these columns.
+dfCleanAvgHRDistance = dfCleanAvgHRDistance.query("distance_Miles >= 1").query("avgHR > 0") ## remove rows where less than 1 mile was run, no HR was captured
+dfCleanAvgHRDistance['distance_Miles'] = dfCleanAvgHRDistance['distance_Miles'].astype(float)
+dfCleanAvgHRDistance['avgHR'] = dfCleanAvgHRDistance['avgHR'].astype(float)
+sns.regplot(x="avgHR",y="distance_Miles",data=dfCleanAvgHRDistance)
+plt.title("Linear Regression Model Fit: Average HR and Distance Run")
+plt.show()
 
 
 
